@@ -28,9 +28,12 @@ uninstall() {
 if [ "${1:-}" = "--uninstall" ]; then uninstall; exit 0; fi
 [ -z "${1:-}" ] || die "unknown option: $1 (use --uninstall)"
 
-if [ -f "$HOME/Library/LaunchAgents/homebrew.mxcl.noflickerbar.plist" ]; then
-    die "NoFlickerBar already runs as a Homebrew service; use 'brew upgrade noflickerbar' instead"
-fi
+# Homebrew names service agents sh.brew.* (homebrew.mxcl.* before Homebrew 7).
+for brew_label in sh.brew.noflickerbar homebrew.mxcl.noflickerbar; do
+    if [ -f "$HOME/Library/LaunchAgents/$brew_label.plist" ]; then
+        die "NoFlickerBar already runs as a Homebrew service; use 'brew upgrade noflickerbar' instead"
+    fi
+done
 
 if [ "$VERSION" = latest ]; then
     BASE="https://github.com/$REPO/releases/latest/download"
