@@ -50,6 +50,7 @@ Pick one. Each runs NoFlickerBar in the background and again at every login.
 
 ```sh
 brew tap lykoi18/noflickerbar https://github.com/Lykoi18/NoFlickerBar
+brew trust lykoi18/noflickerbar   # Homebrew 7+ asks before using third-party taps
 brew install noflickerbar
 brew services start noflickerbar
 ```
