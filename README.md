@@ -37,23 +37,54 @@ cleanly on Macs without a Touch Bar.
 
 ## Requirements
 
-- MacBook Pro with a Touch Bar (2016–2022), Intel or Apple silicon
-- Xcode Command Line Tools (`xcode-select --install`)
+MacBook Pro with a Touch Bar (2016–2022), Intel or Apple silicon.
 
 Tested on MacBookPro15,1 (15-inch, 2018) with macOS 15.8.1. Reports from other
 models are welcome.
 
 ## Install
 
+Pick one. Each runs NoFlickerBar in the background and again at every login.
+
+### Homebrew
+
+```sh
+brew tap lykoi18/noflickerbar https://github.com/Lykoi18/NoFlickerBar
+brew install noflickerbar
+brew services start noflickerbar
+```
+
+Update with `brew upgrade noflickerbar`; remove with
+`brew services stop noflickerbar && brew uninstall noflickerbar`.
+
+### One-line installer
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/Lykoi18/NoFlickerBar/main/install.sh | bash
+```
+
+It downloads the universal binary from the latest
+[release](https://github.com/Lykoi18/NoFlickerBar/releases), checks its SHA-256,
+copies it to `~/.local/bin/noflickerbar` and writes
+`~/Library/LaunchAgents/io.github.lykoi18.noflickerbar.plist`. Read
+[`install.sh`](install.sh) first if you prefer. Remove with:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/Lykoi18/NoFlickerBar/main/install.sh | bash -s -- --uninstall
+```
+
+To change the defaults described below, set them for `bash`, e.g.
+`curl -fsSL …/install.sh | POLL=0.1 bash`.
+
+### From source
+
+Needs Xcode Command Line Tools (`xcode-select --install`).
+
 ```sh
 git clone https://github.com/Lykoi18/NoFlickerBar.git
 cd NoFlickerBar
-make install
+make install      # make uninstall to remove
 ```
-
-This builds a universal binary, copies it to `~/.local/bin/noflickerbar`, writes
-`~/Library/LaunchAgents/io.github.lykoi18.noflickerbar.plist` and starts it. It
-starts again at every login.
 
 Options:
 
@@ -63,19 +94,15 @@ make install DIM_STEP=1          # keep the idle panel at a brighter step (defau
 make install BINDIR="$PWD/build" # run the binary from the repo instead of ~/.local/bin
 ```
 
-## Uninstall
-
-```sh
-make uninstall
-```
-
 ## Diagnostics
 
 ```sh
-make status                 # launchd state and recent log lines
-build/dfrbright status      # displayState, DFRDimmingStep
-build/dfrbright watch 180   # print the state every second, then leave the Mac idle
+log show --last 1h --predicate 'sender == "noflickerbar"'   # what the service did
+dfrbright status      # displayState, DFRDimmingStep (Homebrew installs dfrbright too)
+dfrbright watch 180   # print the state every second, then leave the Mac idle
 ```
+
+From a source checkout use `make status` and `build/dfrbright`.
 
 `dfrbright step <n>`, `dfrbright off` and `dfrbright on` drive the panel by hand.
 
