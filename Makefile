@@ -13,7 +13,7 @@ BUILD   = build
 PLIST   = $(AGENTS_DIR)/$(LABEL).plist
 DOMAIN  = gui/$(shell id -u)
 
-.PHONY: all install uninstall status clean
+.PHONY: all install uninstall status dist clean
 
 all: $(BUILD)/noflickerbar $(BUILD)/dfrbright
 
@@ -46,5 +46,11 @@ status:
 	@launchctl print $(DOMAIN)/$(LABEL) 2>/dev/null | grep -E '^\s*(state|pid|last exit code)' || echo "not loaded"
 	@/usr/bin/log show --last 1h --style compact --predicate 'process == "noflickerbar" AND sender == "noflickerbar"' | tail -5
 
+# Release assets for install.sh: universal binary plus its checksum.
+dist: $(BUILD)/noflickerbar
+	mkdir -p dist
+	cp $(BUILD)/noflickerbar dist/noflickerbar
+	cd dist && shasum -a 256 noflickerbar > noflickerbar.sha256
+
 clean:
-	rm -rf $(BUILD)
+	rm -rf $(BUILD) dist
