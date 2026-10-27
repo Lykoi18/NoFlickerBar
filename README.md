@@ -129,6 +129,40 @@ From a source checkout use `make status` and `build/dfrbright`.
 
 `dfrbright step <n>`, `dfrbright off` and `dfrbright on` drive the panel by hand.
 
+## Flickers all the time?
+
+NoFlickerBar fixes flicker that starts when the Touch Bar goes idle. If yours also
+flickers while it shows buttons, you can check whether turning the panel off helps.
+On the panel this project was built on, "off" is the same faulty low-power mode and
+keeps flickering, so it may or may not help on yours; please report the result in an
+[issue](https://github.com/Lykoi18/NoFlickerBar/issues) either way.
+
+1. Stop NoFlickerBar if it runs, or it will turn the panel straight back on:
+
+   ```sh
+   brew services stop noflickerbar                              # Homebrew
+   launchctl bootout gui/$(id -u)/io.github.lykoi18.noflickerbar  # install.sh or make install
+   ```
+
+2. Turn the panel off and watch it for a few minutes, including after a key press:
+
+   ```sh
+   dfrbright off
+   ```
+
+   `dfrbright` comes with the Homebrew install; otherwise build it from source
+   (`make`, then `build/dfrbright off`).
+
+3. Turn it back on with `dfrbright on`, then start NoFlickerBar again
+   (`brew services start noflickerbar`, or rerun the installer or `make install`).
+
+### Esc without a Touch Bar
+
+On MacBook Pro models without a physical Esc key, an off Touch Bar also takes Esc
+and F1–F12 with it. macOS can turn Caps Lock into Esc without extra software:
+**System Settings → Keyboard → Keyboard Shortcuts… → Modifier Keys**, select the
+built-in keyboard, and set **Caps Lock key** to **Escape**.
+
 ## Limitations
 
 - Uses private Apple frameworks. A macOS update can change them; `noflickerbar` then
