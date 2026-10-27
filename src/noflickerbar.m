@@ -5,14 +5,16 @@
 // already stopped rendering by then, so the panel stays black.
 //
 // Exits 0 when the Mac has no Touch Bar or the private framework is missing, so a
-// launchd KeepAlive {SuccessfulExit = false} job does not respawn it.
+// launchd KeepAlive {SuccessfulExit = false} job does not respawn it. At login the Touch
+// Bar service can appear after us, so wait for it before deciding there is none; after
+// sleep the service can be re-created, so reconnect when the client stops answering.
 #import <Foundation/Foundation.h>
 #import <CoreGraphics/CoreGraphics.h>
 #import <IOKit/IOKitLib.h>
 #import <objc/runtime.h>
 #include <dlfcn.h>
 
-#define NOFLICKERBAR_VERSION "1.0.0"
+#define NOFLICKERBAR_VERSION "1.0.1"
 
 @interface DFRBrightnessClient : NSObject
 - (long long)displayState;
@@ -23,6 +25,7 @@
 @end
 
 enum { kPanelOff = 1, kFullStep = 1, kFlickerStep = 4 };
+enum { kStartupWaitSeconds = 60, kMissesBeforeReconnect = 8 };
 
 static DFRBrightnessClient *client;
 static long long dimStep = 2;
@@ -31,6 +34,11 @@ static io_registry_entry_t rootDomain, hidSystem;
 // transitions, so if input lands between its step-4 write and ours, it believes the
 // panel is at full brightness and never restores it; we must.
 static BOOL lifted;
+static int misses;
+
+static DFRBrightnessClient *newClient(void) {
+    return [[NSClassFromString(@"DFRBrightnessClient") alloc] init];
+}
 
 // No DFR HID service behind the client means there is no Touch Bar panel.
 // Unknown layout (ivar renamed) counts as present, so we never bail out wrongly.
@@ -63,11 +71,22 @@ static double hidIdleSeconds(void) {
 static void check(void) {
     if (CGDisplayIsAsleep(CGMainDisplayID()) || lidClosed()) return;
     [client flushPropertyCache];
+    id value = [client copyPropertyForKey:@"DFRDimmingStep"];
+    if (!value) {
+        if (++misses >= kMissesBeforeReconnect) {
+            misses = 0;
+            lifted = NO;
+            client = newClient();
+            NSLog(@"Touch Bar not answering, reconnected");
+        }
+        return;
+    }
+    misses = 0;
     if ([client displayState] == kPanelOff) {
         BOOL ok = [client turnOnWithPeriod:0];
         NSLog(@"panel off -> turnOn %@", ok ? @"YES" : @"NO");
     }
-    long long step = [[client copyPropertyForKey:@"DFRDimmingStep"] longLongValue];
+    long long step = [value longLongValue];
     if (step == kFlickerStep) {
         lifted = [client dimToStep:dimStep withPeriod:0];
         NSLog(@"dimming step %d -> %lld %@", kFlickerStep, dimStep, lifted ? @"YES" : @"NO");
@@ -99,10 +118,14 @@ int main(int argc, char **argv) {
             NSLog(@"DFRBrightness framework unavailable (%s), nothing to do", dlerror());
             return 0;
         }
-        client = [[NSClassFromString(@"DFRBrightnessClient") alloc] init];
-        if (!client || !hasTouchBar()) {
-            NSLog(@"no Touch Bar found, nothing to do");
-            return 0;
+        for (int waited = 0;; waited += 2) {
+            client = newClient();
+            if (client && hasTouchBar()) break;
+            if (waited >= kStartupWaitSeconds) {
+                NSLog(@"no Touch Bar found, nothing to do");
+                return 0;
+            }
+            sleep(2);
         }
         // MACH_PORT_NULL is the default main port on every macOS with a Touch Bar.
         rootDomain = IOServiceGetMatchingService(MACH_PORT_NULL, IOServiceMatching("IOPMrootDomain"));
