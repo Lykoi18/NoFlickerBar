@@ -1,4 +1,4 @@
-# touchBarKiller
+# NoFlickerBar
 
 Stops the idle flicker of a faulty MacBook Pro Touch Bar. No SIP changes, no root,
 no kernel extensions: a tiny user-level LaunchAgent.
@@ -26,7 +26,7 @@ On idle, `TouchBarServer` walks the panel through dimming steps:
 On affected panels step **4** is where the glow and flicker live. The panel is never
 actually powered off here (`displayState` stays on).
 
-`tbkeepon` polls the panel through Apple's private `DFRBrightness.framework`
+`noflickerbar` polls the panel through Apple's private `DFRBrightness.framework`
 (`DFRBrightnessClient`, the same client `TouchBarServer` uses) every 0.25 s. When it
 sees step 4 it moves the panel back to step 2. Rendering is already off at that
 point, so the Touch Bar just stays black. Any key or touch makes `TouchBarServer`
@@ -46,13 +46,13 @@ models are welcome.
 ## Install
 
 ```sh
-git clone https://github.com/<you>/touchBarKiller.git
-cd touchBarKiller
+git clone https://github.com/Lykoi18/NoFlickerBar.git
+cd NoFlickerBar
 make install
 ```
 
-This builds a universal binary, copies it to `~/.local/bin/tbkeepon`, writes
-`~/Library/LaunchAgents/io.github.touchbarkiller.tbkeepon.plist` and starts it. It
+This builds a universal binary, copies it to `~/.local/bin/noflickerbar`, writes
+`~/Library/LaunchAgents/io.github.lykoi18.noflickerbar.plist` and starts it. It
 starts again at every login.
 
 Options:
@@ -81,7 +81,7 @@ build/dfrbright watch 180   # print the state every second, then leave the Mac i
 
 ## Limitations
 
-- Uses private Apple frameworks. A macOS update can change them; `tbkeepon` then
+- Uses private Apple frameworks. A macOS update can change them; `noflickerbar` then
   either keeps working, exits with "nothing to do", or needs an update.
 - The panel can spend up to one poll interval (0.25 s by default) in step 4 before it
   is corrected, so a very brief glow is possible.

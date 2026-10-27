@@ -1,4 +1,4 @@
-// tbkeepon: keep the Touch Bar panel out of its flickering idle state while the Mac is
+// noflickerbar: keep the Touch Bar panel out of its flickering idle state while the Mac is
 // in use. On idle TouchBarServer drops DFRDimmingStep to 4 (displayState stays on), and
 // some panels flicker there; a forced turnOff (displayState 1) flickers too. Lift step 4
 // back to a dim step and power the panel back on if it was turned off. TouchBarServer has
@@ -12,7 +12,7 @@
 #import <objc/runtime.h>
 #include <dlfcn.h>
 
-#define TBKEEPON_VERSION "1.0.0"
+#define NOFLICKERBAR_VERSION "1.0.0"
 
 @interface DFRBrightnessClient : NSObject
 - (long long)displayState;
@@ -82,14 +82,14 @@ static void check(void) {
 
 static void usage(FILE *out) {
     fprintf(out,
-            "usage: tbkeepon [poll_s=0.25] [dim_step=2]\n"
+            "usage: noflickerbar [poll_s=0.25] [dim_step=2]\n"
             "Keeps the Touch Bar out of dimming step 4, where some panels flicker on idle.\n");
 }
 
 int main(int argc, char **argv) {
     @autoreleasepool {
         if (argc > 1 && (!strcmp(argv[1], "-h") || !strcmp(argv[1], "--help"))) { usage(stdout); return 0; }
-        if (argc > 1 && !strcmp(argv[1], "--version")) { puts(TBKEEPON_VERSION); return 0; }
+        if (argc > 1 && !strcmp(argv[1], "--version")) { puts(NOFLICKERBAR_VERSION); return 0; }
 
         double poll = argc > 1 ? atof(argv[1]) : 0.25;
         if (argc > 2) dimStep = atoll(argv[2]);
@@ -114,7 +114,7 @@ int main(int argc, char **argv) {
         dispatch_source_set_event_handler(t, ^{ check(); });
         dispatch_resume(t);
 
-        NSLog(@"tbkeepon %s running, poll %.2fs, dim step %lld", TBKEEPON_VERSION, poll, dimStep);
+        NSLog(@"noflickerbar %s running, poll %.2fs, dim step %lld", NOFLICKERBAR_VERSION, poll, dimStep);
         dispatch_main();
     }
 }
