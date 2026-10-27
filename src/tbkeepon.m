@@ -22,11 +22,15 @@
 - (BOOL)dimToStep:(long long)step withPeriod:(float)period;
 @end
 
-enum { kPanelOff = 1, kFlickerStep = 4 };
+enum { kPanelOff = 1, kFullStep = 1, kFlickerStep = 4 };
 
 static DFRBrightnessClient *client;
 static long long dimStep = 2;
-static io_registry_entry_t rootDomain;
+static io_registry_entry_t rootDomain, hidSystem;
+// Set while the panel sits at a step we chose. TouchBarServer only writes on its own
+// transitions, so if input lands between its step-4 write and ours, it believes the
+// panel is at full brightness and never restores it; we must.
+static BOOL lifted;
 
 // No DFR HID service behind the client means there is no Touch Bar panel.
 // Unknown layout (ivar renamed) counts as present, so we never bail out wrongly.
@@ -45,6 +49,17 @@ static BOOL lidClosed(void) {
     return closed;
 }
 
+// Seconds since the last HID input; large when unknown so we never restore spuriously.
+static double hidIdleSeconds(void) {
+    if (!hidSystem) return 1e9;
+    CFTypeRef v = IORegistryEntryCreateCFProperty(hidSystem, CFSTR("HIDIdleTime"), kCFAllocatorDefault, 0);
+    if (!v) return 1e9;
+    long long ns = 0;
+    BOOL ok = CFGetTypeID(v) == CFNumberGetTypeID() && CFNumberGetValue(v, kCFNumberSInt64Type, &ns);
+    CFRelease(v);
+    return ok ? ns / 1e9 : 1e9;
+}
+
 static void check(void) {
     if (CGDisplayIsAsleep(CGMainDisplayID()) || lidClosed()) return;
     [client flushPropertyCache];
@@ -52,9 +67,16 @@ static void check(void) {
         BOOL ok = [client turnOnWithPeriod:0];
         NSLog(@"panel off -> turnOn %@", ok ? @"YES" : @"NO");
     }
-    if ([[client copyPropertyForKey:@"DFRDimmingStep"] longLongValue] == kFlickerStep) {
-        BOOL ok = [client dimToStep:dimStep withPeriod:0];
-        NSLog(@"dimming step %d -> %lld %@", kFlickerStep, dimStep, ok ? @"YES" : @"NO");
+    long long step = [[client copyPropertyForKey:@"DFRDimmingStep"] longLongValue];
+    if (step == kFlickerStep) {
+        lifted = [client dimToStep:dimStep withPeriod:0];
+        NSLog(@"dimming step %d -> %lld %@", kFlickerStep, dimStep, lifted ? @"YES" : @"NO");
+    } else if (lifted && step != dimStep) {
+        lifted = NO;  // TouchBarServer took over again
+    } else if (lifted && hidIdleSeconds() < 1) {
+        lifted = NO;
+        BOOL ok = [client dimToStep:kFullStep withPeriod:0];
+        NSLog(@"input while at step %lld -> %d %@", dimStep, kFullStep, ok ? @"YES" : @"NO");
     }
 }
 
@@ -84,6 +106,7 @@ int main(int argc, char **argv) {
         }
         // MACH_PORT_NULL is the default main port on every macOS with a Touch Bar.
         rootDomain = IOServiceGetMatchingService(MACH_PORT_NULL, IOServiceMatching("IOPMrootDomain"));
+        hidSystem = IOServiceGetMatchingService(MACH_PORT_NULL, IOServiceMatching("IOHIDSystem"));
 
         dispatch_queue_t q = dispatch_get_main_queue();
         dispatch_source_t t = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, q);
