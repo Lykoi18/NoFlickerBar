@@ -10,6 +10,11 @@ touching it, it dims, then "goes dark", and instead of staying dark it shows a d
 glowing patch (often on the right) and then random bright flashes across the panel.
 Touching a key brings it back to normal until the next idle period.
 
+You may have searched for it as the Touch Bar **flickering**, **flashing**,
+**glitching** or **blinking when idle**, or a Touch Bar that **glows or lights up
+after it turns off**. It is reported mostly on 2016–2019 MacBook Pro models, and
+Apple Diagnostics may show `DFR001`.
+
 Overlay apps that paint the Touch Bar black do not help, because the problem is not
 the content: it is the panel's lowest-power mode.
 
