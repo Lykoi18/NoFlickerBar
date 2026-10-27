@@ -20,8 +20,6 @@ class Noflickerbar < Formula
 
   def caveats
     <<~EOS
-      Start the service now and at every login:
-        brew services start noflickerbar
       If you installed NoFlickerBar with install.sh or make install before,
       remove that copy first so two instances do not run.
     EOS
