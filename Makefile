@@ -32,19 +32,19 @@ install: $(BUILD)/noflickerbar
 	sed -e 's|@LABEL@|$(LABEL)|g' -e 's|@BIN@|$(abspath $(BINDIR))/noflickerbar|g' \
 	    -e 's|@POLL@|$(POLL)|g' -e 's|@DIM_STEP@|$(DIM_STEP)|g' \
 	    launchd/noflickerbar.plist.in > "$(PLIST)"
-	-launchctl bootout $(DOMAIN)/$(LABEL) 2>/dev/null
+	@launchctl bootout $(DOMAIN)/$(LABEL) 2>/dev/null || true
 	launchctl bootstrap $(DOMAIN) "$(PLIST)"
 	@echo "noflickerbar installed and running ($(LABEL))"
 
 uninstall:
-	-launchctl bootout $(DOMAIN)/$(LABEL) 2>/dev/null
+	@launchctl bootout $(DOMAIN)/$(LABEL) 2>/dev/null || true
 	rm -f "$(PLIST)"
 	[ "$(abspath $(BINDIR))" = "$(abspath $(BUILD))" ] || rm -f "$(BINDIR)/noflickerbar"
 	@echo "noflickerbar removed"
 
 status:
 	@launchctl print $(DOMAIN)/$(LABEL) 2>/dev/null | grep -E '^\s*(state|pid|last exit code)' || echo "not loaded"
-	@/usr/bin/log show --last 1h --style compact --predicate 'process == "noflickerbar"' | tail -5
+	@/usr/bin/log show --last 1h --style compact --predicate 'process == "noflickerbar" AND sender == "noflickerbar"' | tail -5
 
 clean:
 	rm -rf $(BUILD)
