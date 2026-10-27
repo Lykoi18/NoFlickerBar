@@ -40,6 +40,23 @@ return to step 0 as usual, so Esc and the function row keep working.
 It does nothing while the main display is asleep or the lid is closed, and it exits
 cleanly on Macs without a Touch Bar.
 
+## Resource usage
+
+Polling four times a second sounds busy, but each poll is a couple of property reads
+on the Touch Bar's HID service. Measured over 20 minutes on MacBookPro15,1
+(i9-8950HK, macOS 15.8.1) with `ps` and `top`:
+
+| Metric | Value |
+|---|---|
+| CPU | about 0.15 % of one core on average (1.8 s of CPU time in 19 min) |
+| Idle wakeups | about 2 per second; macOS coalesces the timer with other work |
+| Energy impact (`top` POWER) | 0.1–0.2 |
+| Memory | 2.4 MB, 3 threads |
+
+It adds no input latency: it does not tap or filter keyboard, trackpad or Touch Bar
+events, and it only writes to the panel on idle transitions, a few times an hour.
+To trade reaction time for even fewer wakeups, install with `POLL=0.5`.
+
 ## Requirements
 
 MacBook Pro with a Touch Bar (2016–2022), Intel or Apple silicon.
