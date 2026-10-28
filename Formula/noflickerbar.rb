@@ -1,8 +1,8 @@
 class Noflickerbar < Formula
   desc "Stops the idle flicker of a faulty MacBook Pro Touch Bar"
   homepage "https://github.com/Lykoi18/NoFlickerBar"
-  url "https://github.com/Lykoi18/NoFlickerBar/archive/refs/tags/v1.0.1.tar.gz"
-  sha256 "711df5744808c4e5620c6ed5011c3544fb153cee57b62579d64ae171a568ff71"
+  url "https://github.com/Lykoi18/NoFlickerBar/archive/refs/tags/v1.0.2.tar.gz"
+  sha256 "42eb4656eb3685055f6cc7ff971b3359bb716155c838a8bfc1d4b1a3de394ce9"
   license "MIT"
 
   depends_on :macos
