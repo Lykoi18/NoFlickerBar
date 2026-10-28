@@ -1,8 +1,9 @@
 // noflickerbar: keep the Touch Bar panel out of its flickering idle state while the Mac is
 // in use. On idle TouchBarServer drops DFRDimmingStep to 4 (displayState stays on), and
-// some panels flicker there; a forced turnOff (displayState 1) flickers too. Lift step 4
-// back to a dim step and power the panel back on if it was turned off. TouchBarServer has
-// already stopped rendering by then, so the panel stays black.
+// some panels flicker there. Lift step 4 back to a dim step; TouchBarServer has already
+// stopped rendering by then, so the panel stays black. Never power the panel on: when
+// TouchBarServer turns it off (lock screen, notification wake, sleep) it means it, and
+// overriding that can leave the panel without an image after wake.
 //
 // Exits 0 when the Mac has no Touch Bar or the private framework is missing, so a
 // launchd KeepAlive {SuccessfulExit = false} job does not respawn it. At login the Touch
@@ -14,17 +15,15 @@
 #import <objc/runtime.h>
 #include <dlfcn.h>
 
-#define NOFLICKERBAR_VERSION "1.0.1"
+#define NOFLICKERBAR_VERSION "1.0.2"
 
 @interface DFRBrightnessClient : NSObject
-- (long long)displayState;
 - (id)copyPropertyForKey:(id)key;
 - (void)flushPropertyCache;
-- (BOOL)turnOnWithPeriod:(float)period;
 - (BOOL)dimToStep:(long long)step withPeriod:(float)period;
 @end
 
-enum { kPanelOff = 1, kFullStep = 1, kFlickerStep = 4 };
+enum { kFullStep = 1, kFlickerStep = 4 };
 enum { kStartupWaitSeconds = 60, kMissesBeforeReconnect = 8 };
 
 static DFRBrightnessClient *client;
@@ -82,10 +81,6 @@ static void check(void) {
         return;
     }
     misses = 0;
-    if ([client displayState] == kPanelOff) {
-        BOOL ok = [client turnOnWithPeriod:0];
-        NSLog(@"panel off -> turnOn %@", ok ? @"YES" : @"NO");
-    }
     long long step = [value longLongValue];
     if (step == kFlickerStep) {
         lifted = [client dimToStep:dimStep withPeriod:0];

@@ -137,7 +137,8 @@ On the panel this project was built on, "off" is the same faulty low-power mode 
 keeps flickering, so it may or may not help on yours; please report the result in an
 [issue](https://github.com/Lykoi18/NoFlickerBar/issues) either way.
 
-1. Stop NoFlickerBar if it runs, or it will turn the panel straight back on:
+1. Stop NoFlickerBar if it runs, so it does not interfere (versions before 1.0.2
+   turn the panel straight back on):
 
    ```sh
    brew services stop noflickerbar                              # Homebrew
